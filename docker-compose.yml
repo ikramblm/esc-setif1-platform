@@ -1,0 +1,51 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: esc_setif1_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: esc_setif1
+      POSTGRES_USER: esc_user
+      POSTGRES_PASSWORD: esc_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed-data.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U esc_user -d esc_setif1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: esc_setif1_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://esc_user:esc_password@db:5432/esc_setif1
+      JWT_ACCESS_SECRET: dev_access_secret_change_in_prod_64chars_minimum_length
+      JWT_REFRESH_SECRET: dev_refresh_secret_change_in_prod_64chars_minimum_length
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      ENCRYPTION_KEY: "dev_32_char_key_CHANGE_IN_PROD!!"
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
+    driver: local

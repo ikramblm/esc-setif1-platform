@@ -1,0 +1,61 @@
+/* ═══════════════════════════════════════════════════════════════
+   RTL / Arabic Overrides – applied when html[dir="rtl"]
+   Uses CSS logical properties for natural bidirectionality
+   ═══════════════════════════════════════════════════════════════ */
+
+html[dir='rtl'] body {
+  font-family: var(--font-arabic);
+}
+
+html[dir='rtl'] h1,
+html[dir='rtl'] h2,
+html[dir='rtl'] h3,
+html[dir='rtl'] h4,
+html[dir='rtl'] h5,
+html[dir='rtl'] h6 {
+  font-family: var(--font-arabic);
+  font-weight: 700;
+}
+
+/* Flip logical properties */
+html[dir='rtl'] .text-start  { text-align: right; }
+html[dir='rtl'] .text-end    { text-align: left; }
+
+/* Nav items order */
+html[dir='rtl'] nav .nav-links { flex-direction: row-reverse; }
+
+/* Form select arrow */
+html[dir='rtl'] select.form-input {
+  background-position: left 14px center;
+  padding-right: 14px;
+  padding-left: 40px;
+}
+
+/* Table header alignment */
+html[dir='rtl'] .table th,
+html[dir='rtl'] .table td {
+  text-align: right;
+}
+
+/* Modal footer */
+html[dir='rtl'] .modal-footer { flex-direction: row-reverse; }
+
+/* Badge icon order */
+html[dir='rtl'] .badge { flex-direction: row-reverse; }
+
+/* Alert icon */
+html[dir='rtl'] .alert { flex-direction: row-reverse; }
+
+/* Cards and lists — let logical properties handle */
+html[dir='rtl'] .card-icon { margin-right: 0; margin-left: 12px; }
+
+/* Sidebar offset (dashboard) */
+html[dir='rtl'] .sidebar { left: auto; right: 0; }
+html[dir='rtl'] .main-content { margin-left: 0; margin-right: 260px; }
+
+@media (max-width: 1024px) {
+  html[dir='rtl'] .main-content { margin-right: 0; }
+}
+
+/* Smooth transition for language switch */
+html { transition: direction 0.15s ease; }
