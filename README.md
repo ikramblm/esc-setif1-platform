@@ -59,12 +59,6 @@ npm install
 npm run dev
 ```
 
-## Demo Accounts
-
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@esc-setif1.dz | admin123 |
-| Company | *(register via UI)* | *(your choice)* |
 
 ## API Endpoints
 
@@ -130,15 +124,3 @@ See [SECURITY.md](SECURITY.md) for the full security guide.
 - XSS: CSP headers + DOMPurify + express-validator escaping
 - HSTS, X-Frame-Options: DENY, nosniff
 
-## Deployment (Production)
-
-```bash
-# Frontend → Vercel
-vercel --prod
-
-# Backend → Render
-# Set env vars in Render dashboard, connect Neon/Supabase PostgreSQL
-
-# Or Railway (one-click from docker-compose)
-railway up
-```
