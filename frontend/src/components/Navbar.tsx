@@ -8,7 +8,6 @@ interface NavbarProps {
   lang: Lang; setLang: (l: Lang) => void
   tr: (s: string, k: string) => string
   user: AuthUser | null; onLogout: () => void
-  onOpenAuth: (mode?: 'login' | 'register') => void
   onOpenAccount: () => void
   unreadCount?: number
 }
@@ -19,7 +18,7 @@ const LANGS: { code: Lang; label: string; full: string }[] = [
   { code: 'en', label: 'EN', full: 'English' },
 ]
 
-export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, onOpenAccount, unreadCount = 0 }: NavbarProps) {
+export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAccount, unreadCount = 0 }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
 
@@ -34,18 +33,8 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, 
       }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', height: 64, gap: 32 }}>
           {/* Logo */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: 'linear-gradient(135deg, var(--emerald), var(--emerald-dk))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(16,185,129,.35)',
-            }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 14L9 4L15 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M5.5 10.5H12.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </div>
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <img src="/logo-64.png" alt="UFAS1" width={40} height={40} style={{ borderRadius: '50%', flexShrink: 0 }}/>
             <div>
               <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy)', lineHeight: 1 }}>ESC Sétif 1</div>
               <div style={{ fontSize: '0.65rem', color: 'var(--muted)', lineHeight: 1.3, marginTop: 1 }}>Services & Consultations</div>
@@ -54,16 +43,46 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, 
 
           {/* Nav links */}
           <nav style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }} className="desktop-nav">
-            {['services','sectors','about','contact'].map(k => (
-              <a key={k} href={`/#${k}`} style={{
-                padding: '6px 13px', borderRadius: 'var(--r-md)',
-                fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
-                transition: 'all var(--t) var(--ease)',
-              }}
-              onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
-              onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
-              >{tr('nav', k)}</a>
-            ))}
+            <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{
+              padding: '6px 13px', borderRadius: 'var(--r-md)',
+              fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
+              transition: 'all var(--t) var(--ease)',
+            }}
+            onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
+            onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
+            >{tr('nav', 'home')}</Link>
+            <a href="/#sectors" style={{
+              padding: '6px 13px', borderRadius: 'var(--r-md)',
+              fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
+              transition: 'all var(--t) var(--ease)',
+            }}
+            onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
+            onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
+            >{tr('nav', 'sectors')}</a>
+            <a href="/#about" style={{
+              padding: '6px 13px', borderRadius: 'var(--r-md)',
+              fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
+              transition: 'all var(--t) var(--ease)',
+            }}
+            onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
+            onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
+            >{tr('nav', 'about')}</a>
+            <Link to="/services" style={{
+              padding: '6px 13px', borderRadius: 'var(--r-md)',
+              fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
+              transition: 'all var(--t) var(--ease)',
+            }}
+            onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
+            onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
+            >{tr('nav', 'services')}</Link>
+            <Link to="/contact" style={{
+              padding: '6px 13px', borderRadius: 'var(--r-md)',
+              fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted)',
+              transition: 'all var(--t) var(--ease)',
+            }}
+            onMouseOver={e => { (e.target as HTMLElement).style.color = 'var(--navy)'; (e.target as HTMLElement).style.background = 'var(--bg)' }}
+            onMouseOut={e => { (e.target as HTMLElement).style.color = 'var(--muted)'; (e.target as HTMLElement).style.background = 'transparent' }}
+            >{tr('nav', 'contact')}</Link>
           </nav>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
@@ -164,8 +183,8 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, 
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="btn btn-outline btn-sm" onClick={() => onOpenAuth('login')}>{tr('nav','login')}</button>
-                <button className="btn btn-primary btn-sm" onClick={() => onOpenAuth('register')}>{tr('nav','register')}</button>
+                <Link to="/login" className="btn btn-outline btn-sm">{tr('nav','login')}</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm">{tr('nav','register')}</Link>
               </div>
             )}
 
@@ -181,11 +200,21 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, 
         {/* Mobile menu */}
         {menuOpen && (
           <div style={{ borderTop: '1px solid var(--border)', background: 'var(--white)', padding: '8px 0 16px' }}>
-            {['services','sectors','about','contact'].map(k => (
-              <a key={k} href={`/#${k}`}
-                style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
-                onClick={() => setMenuOpen(false)}>{tr('nav',k)}</a>
-            ))}
+            <Link to="/"
+              style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
+              onClick={() => { setMenuOpen(false); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{tr('nav', 'home')}</Link>
+            <a href="/#sectors"
+              style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
+              onClick={() => setMenuOpen(false)}>{tr('nav', 'sectors')}</a>
+            <a href="/#about"
+              style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
+              onClick={() => setMenuOpen(false)}>{tr('nav', 'about')}</a>
+            <Link to="/services"
+              style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
+              onClick={() => setMenuOpen(false)}>{tr('nav', 'services')}</Link>
+            <Link to="/contact"
+              style={{ display: 'block', padding: '11px 24px', fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-2)', borderBottom: '1px solid var(--border)' }}
+              onClick={() => setMenuOpen(false)}>{tr('nav', 'contact')}</Link>
             {user ? (
               <div style={{ padding: '14px 24px 0', display: 'flex', gap: 8 }}>
                 {user.role !== 'admin' && (
@@ -197,8 +226,8 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAuth, 
               </div>
             ) : (
               <div style={{ display: 'flex', gap: 8, padding: '14px 24px 0' }}>
-                <button className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => { onOpenAuth('login'); setMenuOpen(false) }}>{tr('nav','login')}</button>
-                <button className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => { onOpenAuth('register'); setMenuOpen(false) }}>{tr('nav','register')}</button>
+                <Link to="/login" className="btn btn-outline btn-sm" style={{ flex: 1 }} onClick={() => setMenuOpen(false)}>{tr('nav','login')}</Link>
+                <Link to="/signup" className="btn btn-primary btn-sm" style={{ flex: 1 }} onClick={() => setMenuOpen(false)}>{tr('nav','register')}</Link>
               </div>
             )}
           </div>

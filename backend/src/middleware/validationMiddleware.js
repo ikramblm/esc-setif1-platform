@@ -31,8 +31,9 @@ const needRules = [
   body('title').trim().notEmpty().isLength({ max: 300 }).escape(),
   body('serviceType').trim().isIn(['Consulting','Formation','Études','Recherche']),
   body('description').trim().notEmpty().isLength({ max: 5000 }).escape(),
-  body('deadline').isISO8601().toDate(),
-  body('budget').optional().isNumeric().isFloat({ min: 0 }),
+  body('deadline').optional({ checkFalsy: true }).isISO8601().toDate(),
+  body('budget').optional({ checkFalsy: true }).isNumeric().isFloat({ min: 0 }),
+  body('serviceId').optional({ checkFalsy: true }).isUUID(),
 ]
 
 const serviceRules = [

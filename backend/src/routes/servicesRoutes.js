@@ -1,13 +1,15 @@
 const router = require('express').Router()
-const { getServices, publishService, deleteService } = require('../controllers/servicesController')
+const { getServices, getDepartments, getMyServices, publishService, deleteService } = require('../controllers/servicesController')
 const { authenticate } = require('../middleware/authMiddleware')
 const { requireRole } = require('../middleware/roleMiddleware')
-const { serviceRules, validate } = require('../middleware/validationMiddleware')
+const { uploadServiceFiles } = require('../middleware/uploadMiddleware')
 
-router.get('/', getServices)   // Public
+router.get('/', getServices)               // Public
+router.get('/departments', getDepartments) // Public
 
 router.use(authenticate)
-router.post('/',     requireRole('admin'), serviceRules, validate, publishService)
-router.delete('/:id',requireRole('admin'), deleteService)
+router.get('/mine',  requireRole('researcher'), getMyServices)
+router.post('/',     requireRole('admin', 'researcher'), uploadServiceFiles, publishService)
+router.delete('/:id', requireRole('admin', 'researcher'), deleteService)
 
 module.exports = router

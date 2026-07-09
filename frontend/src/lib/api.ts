@@ -78,6 +78,9 @@ export const authApi = {
   verify:             ()                                 => api.get('/auth/verify'),
   forgotPassword:     (email: string)                   => api.post('/auth/forgot-password', { email }),
   resetPassword:      (email: string, code: string, newPassword: string) => api.post('/auth/reset-password', { email, code, newPassword }),
+  changePassword:     (currentPassword: string, newPassword: string) => api.post('/auth/change-password', { currentPassword, newPassword }),
+  sendVerification:   (email: string)                   => api.post('/auth/send-verification', { email }),
+  verifyEmail:        (email: string, code: string)     => api.post('/auth/verify-email', { email, code }),
 }
 
 // ── Needs endpoints ─────────────────────────────────────
@@ -90,9 +93,18 @@ export const needsApi = {
 
 // ── Services endpoints ──────────────────────────────────
 export const servicesApi = {
-  getAll:    ()               => api.get('/services'),
-  publish:   (d: ServicePayload) => api.post('/services', d),
-  remove:    (id: string)    => api.delete(`/services/${id}`),
+  getAll:        (filters?: ServiceFilters) => api.get('/services', { params: filters }),
+  getDepartments: ()                        => api.get('/services/departments'),
+  getMine:       ()                         => api.get('/services/mine'),
+  publish:       (d: ServicePayload)        => api.post('/services', d),
+  publishWithFiles: (d: ServicePublishPayload, images: File[], documents: File[]) => {
+    const fd = new FormData()
+    Object.entries(d).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, String(v)) })
+    images.forEach(f => fd.append('images', f))
+    documents.forEach(f => fd.append('documents', f))
+    return api.post('/services', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  remove:        (id: string)               => api.delete(`/services/${id}`),
 }
 
 // ── Profile endpoints ───────────────────────────────────
@@ -101,6 +113,9 @@ export const profileApi = {
   update: (d: ProfilePayload)   => api.put('/profile/me', d),
   getCompanies: ()              => api.get('/profile/companies'),
   toggleCompany: (id: string)   => api.put(`/profile/companies/${id}/toggle`),
+  getContacts: ()                => api.get('/profile/contacts'),
+  getResearcherAccounts: ()      => api.get('/profile/researcher-accounts'),
+  toggleResearcherAccount: (id: string) => api.put(`/profile/researcher-accounts/${id}/toggle`),
 }
 
 // ── Researchers endpoints ───────────────────────────────
@@ -160,6 +175,13 @@ export const notificationsApi = {
   markAllRead: ()        => api.put('/notifications/read-all'),
 }
 
+// ── Favorites endpoints ──────────────────────────────────
+export const favoritesApi = {
+  getMy:    ()                 => api.get('/favorites'),
+  getIds:   ()                 => api.get('/favorites/ids'),
+  toggle:   (serviceId: string) => api.post(`/favorites/${serviceId}/toggle`),
+}
+
 // ── Types ───────────────────────────────────────────────
 export interface RegisterPayload {
   companyName: string
@@ -177,13 +199,34 @@ export interface NeedPayload {
   title: string
   serviceType: string
   description: string
-  deadline: string
-  budget: string
+  deadline?: string
+  budget?: string
+  serviceId?: string
 }
 export interface ServicePayload {
   category: string
   title: string
   description: string
+  department?: string
+  price?: number
+  isFree?: boolean
+}
+export interface ServiceFilters {
+  search?: string
+  category?: string
+  department?: string
+  pricing?: 'free' | 'paid'
+}
+export interface ServicePublishPayload {
+  category: string
+  title: string
+  description: string
+  department?: string
+  city?: string
+  researchDomain?: string
+  phone?: string
+  price?: number
+  isFree?: boolean
 }
 export interface ProfilePayload {
   companyName?: string; sector?: string; contactName?: string

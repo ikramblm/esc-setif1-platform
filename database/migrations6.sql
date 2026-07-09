@@ -1,0 +1,3 @@
+ALTER TABLE needs ADD COLUMN IF NOT EXISTS service_id UUID REFERENCES services(id) ON DELETE SET NULL;
+ALTER TABLE needs ALTER COLUMN deadline DROP NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_needs_service ON needs(service_id);

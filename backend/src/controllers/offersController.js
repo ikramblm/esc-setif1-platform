@@ -208,11 +208,20 @@ async function updateApplicationStatus(req, res) {
   try {
     const r = await client.query(
       `UPDATE project_applications SET status = $1, updated_at = NOW()
-       WHERE id = $2 RETURNING id, status`,
+       WHERE id = $2 RETURNING id, status, company_id, offer_id`,
       [status, id]
     )
     if (!r.rows.length) return res.status(404).json({ message: 'Candidature introuvable.' })
-    res.json({ application: r.rows[0] })
+    const app = r.rows[0]
+    const offer = await client.query('SELECT title FROM offers WHERE id = $1', [app.offer_id])
+    const offerTitle = offer.rows[0]?.title ?? 'l’offre'
+    const label = status === 'accepted' ? 'acceptée' : status === 'rejected' ? 'rejetée' : 'mise à jour'
+    await client.query(
+      `INSERT INTO notifications (id, user_id, type, title, body)
+       VALUES ($1,$2,'status','Mise à jour de votre candidature',$3)`,
+      [uuidv4(), app.company_id, `Votre candidature à "${offerTitle}" a été ${label}.`]
+    )
+    res.json({ application: { id: app.id, status: app.status } })
   } catch (err) {
     console.error('updateApplicationStatus:', err.message)
     res.status(500).json({ message: 'Erreur serveur.' })

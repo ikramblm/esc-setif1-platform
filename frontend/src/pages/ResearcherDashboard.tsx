@@ -136,9 +136,7 @@ export default function ResearcherDashboard({ tr, lang, user, onLogout }: Props)
       <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--border)', padding: '0 24px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#7c3aed,#4c1d95)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="M3 14L9 4L15 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.5 10.5H12.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            </div>
+            <img src="/logo-64.png" alt="UFAS1" width={30} height={30} style={{ borderRadius:'50%' }}/>
             <span style={{ fontFamily: 'var(--font-head)', fontWeight: 800, color: 'var(--navy)', fontSize: '.95rem' }}>ESC Sétif 1</span>
             <span style={{ background: '#ede9fe', color: '#7c3aed', fontSize: '.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>Chercheur</span>
           </div>

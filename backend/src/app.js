@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+const path    = require('path')
 const express = require('express')
 const helmet  = require('helmet')
 const cors    = require('cors')
@@ -15,6 +16,7 @@ const offersRoutes         = require('./routes/offersRoutes')
 const projectsRoutes       = require('./routes/projectsRoutes')
 const messagesRoutes       = require('./routes/messagesRoutes')
 const notificationsRoutes  = require('./routes/notificationsRoutes')
+const favoritesRoutes      = require('./routes/favoritesRoutes')
 
 const app = express()
 
@@ -56,6 +58,9 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(':method :safe-url :status :res[content-length] - :response-time ms'))
 }
 
+// ── Static file uploads ──────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
+
 // ── Global rate limit ──────────────────────────────────────────
 app.use('/api', apiLimiter)
 
@@ -69,6 +74,7 @@ app.use('/api/offers',         offersRoutes)
 app.use('/api/projects',       projectsRoutes)
 app.use('/api/messages',       messagesRoutes)
 app.use('/api/notifications',  notificationsRoutes)
+app.use('/api/favorites',      favoritesRoutes)
 
 // ── Health check ───────────────────────────────────────────────
 app.get('/api/health', (req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }))

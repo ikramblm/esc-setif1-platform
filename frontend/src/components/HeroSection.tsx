@@ -1,11 +1,9 @@
+import { Link } from 'react-router-dom'
 import { ArrowRight, Building2, Sparkles } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 interface HeroProps { tr: (s: string, k: string) => string }
 
 export default function HeroSection({ tr }: HeroProps) {
-  const navigate = useNavigate()
-
   return (
     <section id="home" style={{
       background: 'linear-gradient(160deg, var(--navy) 0%, #0d2040 55%, #0a1830 100%)',
@@ -54,36 +52,12 @@ export default function HeroSection({ tr }: HeroProps) {
 
         {/* CTAs */}
         <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:72 }}>
-          <button className="btn btn-primary btn-xl"
-            onClick={() => navigate('/auth?mode=register')}
-            style={{ gap:10 }}>
+          <Link to="/signup" className="btn btn-primary btn-xl" style={{ gap:10 }}>
             {tr('hero','cta1')} <ArrowRight size={18}/>
-          </button>
-          <a href="#services" className="btn btn-white-outline btn-xl">
+          </Link>
+          <Link to="/services" className="btn btn-white-outline btn-xl">
             {tr('hero','cta2')}
-          </a>
-        </div>
-
-        {/* Stats strip */}
-        <div style={{
-          display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:1,
-          background:'rgba(255,255,255,.06)', borderRadius:'var(--r-xl)',
-          border:'1px solid rgba(255,255,255,.08)', overflow:'hidden',
-        }}>
-          {[
-            { v:'20+',  k:'stat1' },
-            { v:'150+', k:'stat2' },
-            { v:'6',    k:'stat3' },
-            { v:'98%',  k:'stat4' },
-          ].map(({ v, k }, i) => (
-            <div key={k} style={{
-              padding:'22px 20px', textAlign:'center',
-              borderRight: i < 3 ? '1px solid rgba(255,255,255,.07)' : 'none',
-            }}>
-              <div style={{ fontSize:'1.9rem', fontWeight:800, color:'var(--emerald)', fontFamily:'var(--font-head)', lineHeight:1 }}>{v}</div>
-              <div style={{ fontSize:'.74rem', color:'rgba(255,255,255,.5)', marginTop:6, fontWeight:500, letterSpacing:'.02em' }}>{tr('hero',k)}</div>
-            </div>
-          ))}
+          </Link>
         </div>
 
         {/* Floating card */}
@@ -107,9 +81,6 @@ export default function HeroSection({ tr }: HeroProps) {
       <style>{`
         @media (max-width: 768px) {
           .trust-card { display: none !important; }
-        }
-        @media (max-width: 600px) {
-          div[style*="repeat(4,1fr)"] { grid-template-columns: repeat(2,1fr) !important; }
         }
       `}</style>
     </section>

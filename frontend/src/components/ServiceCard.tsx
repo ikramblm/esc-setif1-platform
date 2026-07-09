@@ -7,6 +7,9 @@ interface Service {
   category: string
   title: string
   description: string
+  department?: string | null
+  price?: number | null
+  isFree?: boolean
   publishedAt: string
 }
 
@@ -33,7 +36,15 @@ export default function ServiceCard({ service, lang, isAdmin, onDelete }: Servic
         )}
       </div>
       <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-navy)', marginBottom: 8 }}>{service.title}</h3>
-      <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: 16 }}>{service.description}</p>
+      <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', lineHeight: 1.6, marginBottom: 12 }}>{service.description}</p>
+      {(service.department || service.price != null || service.isFree) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, fontSize: '.78rem', color: 'var(--muted)' }}>
+          {service.department && <span>📍 {service.department}</span>}
+          <span style={{ fontWeight: 700, color: service.isFree ? 'var(--emerald)' : 'var(--navy)' }}>
+            {service.isFree ? 'Gratuit' : service.price != null ? `${service.price.toLocaleString(lang)} DA` : 'Sur devis'}
+          </span>
+        </div>
+      )}
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: 'var(--color-muted)' }}>
         <Calendar size={11} /> Publié le {formatDate(service.publishedAt, lang)}
       </div>

@@ -1,25 +1,28 @@
 import { useState, useEffect, useCallback } from 'react'
-import { LayoutDashboard, FileText, Package, Plus, LogOut, Users, CheckCircle, Clock, AlertCircle, Briefcase, FlaskConical, Building2, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
+import { LayoutDashboard, FileText, Package, Plus, LogOut, Users, CheckCircle, Clock, AlertCircle, Briefcase, FlaskConical, Building2, Pencil, Trash2, ToggleLeft, ToggleRight, MessageSquare, ChevronLeft, ChevronRight, Send } from 'lucide-react'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import ServiceCard from '../components/ServiceCard'
 import Alert from '../components/Alert'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { needsApi, servicesApi, offersApi, researchersApi, profileApi, projectsApi } from '../lib/api'
+import { needsApi, servicesApi, offersApi, researchersApi, profileApi, projectsApi, messagesApi } from '../lib/api'
 import { sanitizeInput, formatDate, truncate } from '../lib/security'
 import type { Lang } from '../lib/i18n'
 import type { AuthUser } from '../lib/auth'
 
 interface Props { tr: (s:string,k:string)=>string; lang:Lang; user:AuthUser; onLogout:()=>void }
 
-type Tab = 'requests'|'services'|'offers'|'researchers'|'companies'|'projects'
+type Tab = 'requests'|'services'|'offers'|'researchers'|'companies'|'projects'|'messages'
+interface Contact { id:string; name:string; role:string; email:string; detail?:string }
+interface Msg { id:string; sender_id:string; receiver_id:string; body:string; created_at:string; is_read:boolean; sender_name?:string }
 type Status = 'pending'|'reviewing'|'approved'|'rejected'|'completed'
 interface Need { id:string; title:string; serviceType:string; description:string; deadline:string; budget:string; status:Status; createdAt:string; company?:{name:string;sector:string} }
-interface Service { id:string; category:string; title:string; description:string; publishedAt:string }
+interface Service { id:string; category:string; title:string; description:string; department?:string; price?:number|null; isFree?:boolean; publishedAt:string }
 interface Offer { id:string; title:string; description:string; category:string; deadline:string; budget:string; slots:number; tags:string[]; status:string; applicantsCount:number; createdAt:string }
 interface Application { id:string; offerId:string; offerTitle:string; companyId:string; companyName:string; companySector:string; coverLetter:string; status:string; appliedAt:string }
 interface Researcher { id:string; fullName:string; specialty:string; department:string; grade:string; email:string; phone:string; bio:string; expertise:string[]; isActive:boolean }
 interface Company { id:string; companyName:string; sector:string; contactName:string; email:string; isActive:boolean; createdAt:string; employees:number; about:string }
+interface ResearcherAccount { id:string; fullName:string; specialty:string; department:string; grade:string; email:string; phone:string; isActive:boolean; createdAt:string }
 interface Project { id:string; title:string; description:string; status:string; progressPct:number; companyName:string; sector:string; startDate:string; endDate:string; budgetApproved:number; adminNotes:string; createdAt:string; needId:string }
 
 const STATUSES: Status[] = ['pending','reviewing','approved','rejected','completed']
@@ -35,10 +38,12 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
   const [applications, setApplications] = useState<Application[]>([])
   const [researchers, setResearchers] = useState<Researcher[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
+  const [researcherAccounts, setResearcherAccounts] = useState<ResearcherAccount[]>([])
   const [loadingN, setLoadingN] = useState(true)
   const [loadingS, setLoadingS] = useState(true)
   const [loadingO, setLoadingO] = useState(false)
   const [loadingR, setLoadingR] = useState(false)
+  const [loadingRA, setLoadingRA] = useState(false)
   const [loadingC, setLoadingC] = useState(false)
   const [loadingP, setLoadingP] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
@@ -50,10 +55,20 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
   const [filterStatus, setFilterStatus] = useState<Status|'all'>('all')
   const [selectedNeed, setSelectedNeed] = useState<Need|null>(null)
   const [selectedOffer, setSelectedOffer] = useState<Offer|null>(null)
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Messages
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [loadingContacts, setLoadingContacts] = useState(false)
+  const [allMsgs, setAllMsgs] = useState<Msg[]>([])
+  const [activeContact, setActiveContact] = useState<Contact|null>(null)
+  const [msgBody, setMsgBody] = useState('')
+  const [sendingMsg, setSendingMsg] = useState(false)
+  const [contactFilter, setContactFilter] = useState<'all'|'company'|'researcher'>('all')
 
   // Service modal
   const [svcModal, setSvcModal] = useState(false)
-  const [svcForm, setSvcForm] = useState({ category:'', title:'', description:'' })
+  const [svcForm, setSvcForm] = useState({ category:'', title:'', description:'', department:'', price:'', isFree:false })
   const [submittingSvc, setSubmittingSvc] = useState(false)
 
   // Offer modal
@@ -91,13 +106,41 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
     if (tab==='researchers' && researchers.length===0) {
       setLoadingR(true); researchersApi.getAllAdmin().then(r=>setResearchers(r.data.researchers??[])).catch(()=>setResearchers([])).finally(()=>setLoadingR(false))
     }
+    if (tab==='researchers' && researcherAccounts.length===0) {
+      setLoadingRA(true); profileApi.getResearcherAccounts().then(r=>setResearcherAccounts(r.data.researcherAccounts??[])).catch(()=>setResearcherAccounts([])).finally(()=>setLoadingRA(false))
+    }
     if (tab==='companies' && companies.length===0) {
       setLoadingC(true); profileApi.getCompanies().then(r=>setCompanies(r.data.companies??[])).catch(()=>setCompanies([])).finally(()=>setLoadingC(false))
     }
     if (tab==='projects' && projects.length===0) {
       setLoadingP(true); projectsApi.getAll().then(r=>setProjects(r.data.projects??[])).catch(()=>setProjects([])).finally(()=>setLoadingP(false))
     }
+    if (tab==='messages') {
+      if (contacts.length===0) {
+        setLoadingContacts(true)
+        profileApi.getContacts().then(r=>setContacts(r.data.contacts??[])).catch(()=>setContacts([])).finally(()=>setLoadingContacts(false))
+      }
+      messagesApi.getMy().then(r=>setAllMsgs(r.data.messages??[])).catch(()=>{})
+    }
   }, [tab])
+
+  const conversation = activeContact
+    ? allMsgs.filter(m => m.sender_id===activeContact.id || m.receiver_id===activeContact.id)
+        .sort((a,b)=>new Date(a.created_at).getTime()-new Date(b.created_at).getTime())
+    : []
+
+  const sendAdminMessage = async () => {
+    if (!activeContact || !msgBody.trim()) return
+    setSendingMsg(true)
+    try {
+      const { data } = await messagesApi.send({ receiverId: activeContact.id, body: msgBody.trim() })
+      setAllMsgs(prev => [...prev, data.message])
+      setMsgBody('')
+    } catch { setAlert({ type:'error', msg:tr('admin','statusError') }) }
+    finally { setSendingMsg(false) }
+  }
+
+  const filteredContacts = contacts.filter(c => contactFilter==='all' || c.role===contactFilter)
 
   // ── Needs ─────────────────────────────────────────────
   const updateStatus = async (id: string, status: Status) => {
@@ -120,8 +163,13 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
     if (!svcForm.category||!svcForm.title||!svcForm.description) { setAlert({ type:'error', msg:tr('admin','allRequired') }); return }
     setSubmittingSvc(true)
     try {
-      await servicesApi.publish({ ...svcForm, title:sanitizeInput(svcForm.title), description:sanitizeInput(svcForm.description) })
-      setAlert({ type:'success', msg:tr('admin','publishSuccess') }); setSvcModal(false); setSvcForm({ category:'', title:'', description:'' }); loadServices()
+      await servicesApi.publish({
+        ...svcForm,
+        title:sanitizeInput(svcForm.title),
+        description:sanitizeInput(svcForm.description),
+        price: svcForm.price ? Number(svcForm.price) : undefined,
+      })
+      setAlert({ type:'success', msg:tr('admin','publishSuccess') }); setSvcModal(false); setSvcForm({ category:'', title:'', description:'', department:'', price:'', isFree:false }); loadServices()
     } catch { setAlert({ type:'error', msg:tr('admin','publishError') }) }
     finally { setSubmittingSvc(false) }
   }
@@ -192,12 +240,25 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
     try { await researchersApi.remove(id); setResearchers(prev=>prev.filter(r=>r.id!==id)); setAlert({ type:'success', msg:tr('researchers','deleteSuccess') }) }
     catch { setAlert({ type:'error', msg:tr('admin','deleteError') }) }
   }
+  const toggleResearcher = async (id: string, isActive: boolean) => {
+    try {
+      await researchersApi.update(id, { isActive: !isActive } as any)
+      setResearchers(prev => prev.map(r => r.id===id ? {...r, isActive: !isActive} : r))
+    } catch { setAlert({ type:'error', msg:tr('admin','statusError') }) }
+  }
 
   // ── Companies ─────────────────────────────────────────
   const toggleCompany = async (id: string) => {
     try {
       const r = await profileApi.toggleCompany(id)
       setCompanies(prev => prev.map(c=>c.id===id?{...c,isActive:r.data.isActive}:c))
+    } catch { setAlert({ type:'error', msg:tr('admin','statusError') }) }
+  }
+
+  const toggleResearcherAccount = async (id: string) => {
+    try {
+      const r = await profileApi.toggleResearcherAccount(id)
+      setResearcherAccounts(prev => prev.map(c=>c.id===id?{...c,isActive:r.data.isActive}:c))
     } catch { setAlert({ type:'error', msg:tr('admin','statusError') }) }
   }
 
@@ -234,6 +295,8 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
     } catch { setAlert({ type:'error', msg:'Erreur.' }) }
   }
 
+  const unreadMsgs = allMsgs.filter(m => !m.is_read && m.receiver_id===user.id).length
+
   const SIDEBAR = [
     { id:'requests',    icon:FileText,    labelKey:'tabRequests',  badge:stats.pending },
     { id:'projects',    icon:LayoutDashboard, labelKey:'tabProjects', badge:projects.filter(p=>p.status==='active').length },
@@ -241,6 +304,7 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
     { id:'offers',      icon:Briefcase,   labelKey:'tabOffers',    badge:offers.filter(o=>o.status==='open').length },
     { id:'researchers', icon:FlaskConical,labelKey:'tabResearchers',badge:0 },
     { id:'companies',   icon:Building2,   labelKey:'tabCompanies', badge:0 },
+    { id:'messages',    icon:MessageSquare, labelKey:'tabMessages', badge:unreadMsgs },
   ]
 
   return (
@@ -248,9 +312,7 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
       <header style={{ background:'var(--navy)', borderBottom:'1px solid rgba(255,255,255,.08)' }}>
         <div className="container" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:64 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <div style={{ width:32, height:32, borderRadius:9, background:'linear-gradient(135deg,var(--emerald),var(--emerald-dk))', display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M3 14L9 4L15 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5.5 10.5H12.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            </div>
+            <img src="/logo-64.png" alt="UFAS1" width={32} height={32} style={{ borderRadius:'50%' }}/>
             <div>
               <div style={{ color:'#fff', fontWeight:700, fontSize:'.93rem' }}>ESC Sétif 1</div>
               <div style={{ fontSize:'.68rem', color:'rgba(255,255,255,.4)' }}>{tr('admin','panelLabel')}</div>
@@ -265,14 +327,76 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
 
       <div style={{ display:'flex', flex:1 }}>
         {/* Sidebar */}
-        <aside style={{ width:220, background:'var(--white)', borderRight:'1px solid var(--border)', padding:'20px 0', flexShrink:0 }}>
-          {SIDEBAR.map(({ id, icon:Icon, labelKey, badge }) => (
-            <button key={id} onClick={() => setTab(id as Tab)}
-              style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'11px 20px', textAlign:'start', fontWeight:600, fontSize:'.875rem', cursor:'pointer', border:'none', background:tab===id?'var(--emerald-lt)':'transparent', color:tab===id?'var(--emerald)':'var(--muted)', borderLeft:tab===id?'3px solid var(--emerald)':'3px solid transparent', transition:'all var(--t)' }}>
-              <Icon size={15}/> {tr('admin',labelKey)}
-              {badge > 0 && <span style={{ marginLeft:'auto', padding:'1px 7px', borderRadius:99, background:tab===id?'var(--emerald)':'var(--navy)', color:'#fff', fontSize:'.68rem', fontWeight:700 }}>{badge}</span>}
+        <aside style={{
+          width: collapsed ? 72 : 240, flexShrink: 0,
+          background: 'var(--white)', borderRight: '1px solid var(--border)',
+          display: 'flex', flexDirection: 'column', transition: 'width .2s',
+          position: 'sticky', top: 64, height: 'calc(100vh - 64px)', overflow: 'hidden',
+        }}>
+          {/* User chip */}
+          <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--border)', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 'var(--r-lg)', background: 'var(--bg)' }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                background: 'linear-gradient(135deg,var(--navy),#1e3a6e)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '.85rem',
+              }}>
+                {user.companyName?.charAt(0)?.toUpperCase() ?? 'A'}
+              </div>
+              {!collapsed && (
+                <div style={{ overflow: 'hidden' }}>
+                  <p style={{ fontSize: '.8rem', fontWeight: 700, color: 'var(--navy)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {user.email}
+                  </p>
+                  <p style={{ fontSize: '.72rem', color: 'var(--emerald)', fontWeight: 600 }}>{tr('admin','panelLabel')}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <nav style={{ flex: 1, padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 3, overflowY: 'auto' }}>
+            {SIDEBAR.map(({ id, icon:Icon, labelKey, badge }) => (
+              <button key={id} onClick={() => setTab(id as Tab)} title={tr('admin',labelKey)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                  padding: '10px 12px', borderRadius: 'var(--r-lg)', border: 'none', cursor: 'pointer',
+                  background: tab===id ? 'var(--emerald-lt)' : 'transparent',
+                  color: tab===id ? 'var(--emerald-dk)' : 'var(--text-2)',
+                  fontWeight: tab===id ? 700 : 500, fontSize: '.85rem',
+                  transition: 'all .15s', position: 'relative',
+                }}>
+                <Icon size={17}/>
+                {!collapsed && <span style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>{tr('admin',labelKey)}</span>}
+                {badge > 0 && (
+                  <span style={{
+                    marginLeft: collapsed ? 0 : 'auto', position: collapsed ? 'absolute' : 'static',
+                    top: collapsed ? 2 : undefined, right: collapsed ? 2 : undefined,
+                    background: '#ef4444', color: '#fff', borderRadius: 99,
+                    fontSize: '.62rem', fontWeight: 800, padding: '1px 5px', minWidth: 16, textAlign: 'center',
+                  }}>{badge}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div style={{ padding: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <button onClick={onLogout} title={tr('common','logout')}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+                padding: '10px 12px', borderRadius: 'var(--r-lg)', border: 'none', cursor: 'pointer',
+                background: 'transparent', color: '#ef4444', fontWeight: 600, fontSize: '.85rem',
+              }}>
+              <LogOut size={17}/> {!collapsed && tr('common','logout')}
             </button>
-          ))}
+            <button onClick={() => setCollapsed(!collapsed)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
+                padding: '8px', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', cursor: 'pointer',
+                background: 'var(--bg)', color: 'var(--muted)',
+              }}>
+              {collapsed ? <ChevronRight size={15}/> : <ChevronLeft size={15}/>}
+            </button>
+          </div>
         </aside>
 
         <main style={{ flex:1, padding:32, overflow:'auto', minWidth:0 }}>
@@ -420,6 +544,42 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
           {/* ══ RESEARCHERS ══ */}
           {tab==='researchers' && (
             <>
+              <div style={{ marginBottom:22 }}>
+                <h1 style={{ fontSize:'1.35rem', fontWeight:800, marginBottom:4 }}>{tr('researchers','accountsTitle')}</h1>
+                <p style={{ color:'var(--muted)', fontSize:'.85rem' }}>{researcherAccounts.length} {tr('researchers','accountsSubtitle')}</p>
+              </div>
+              {loadingRA ? <div style={{ textAlign:'center', padding:40 }}><LoadingSpinner size="lg"/></div> : researcherAccounts.length===0 ? (
+                <div style={{ textAlign:'center', padding:40, background:'var(--white)', borderRadius:'var(--r-2xl)', border:'2px dashed var(--border)', marginBottom:32 }}>
+                  <FlaskConical size={32} style={{ color:'var(--border)', marginBottom:10 }}/><p style={{ color:'var(--muted)' }}>{tr('researchers','noAccounts')}</p>
+                </div>
+              ) : (
+                <div style={{ background:'var(--white)', borderRadius:'var(--r-xl)', border:'1px solid var(--border)', overflow:'hidden', marginBottom:32 }}>
+                  <table className="table" style={{ width:'100%' }}>
+                    <thead><tr><th>{tr('researchers','fullName')}</th><th>{tr('researchers','specialty')}</th><th>Email</th><th>{tr('companies','joined')}</th><th>Statut</th><th>Action</th></tr></thead>
+                    <tbody>
+                      {researcherAccounts.map(c => (
+                        <tr key={c.id}>
+                          <td style={{ fontWeight:600, color:'var(--navy)' }}>{c.fullName}</td>
+                          <td style={{ fontSize:'.8rem', color:'var(--muted)' }}>{c.specialty}{c.grade ? ` · ${c.grade}` : ''}</td>
+                          <td style={{ fontSize:'.78rem', color:'var(--muted)' }}>{c.email}</td>
+                          <td style={{ fontSize:'.78rem', color:'var(--muted)' }}>{formatDate(c.createdAt,lang)}</td>
+                          <td>
+                            <span style={{ padding:'3px 10px', borderRadius:99, fontSize:'.75rem', fontWeight:600, background:c.isActive?'var(--emerald-lt)':'#fee2e2', color:c.isActive?'var(--emerald)':'#ef4444' }}>
+                              {c.isActive ? tr('researchers','active') : tr('researchers','inactive')}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn-ghost btn-sm" onClick={()=>toggleResearcherAccount(c.id)} title={tr('companies','toggleActive')}>
+                              {c.isActive ? <ToggleRight size={18} style={{ color:'var(--emerald)' }}/> : <ToggleLeft size={18} style={{ color:'var(--muted)' }}/>}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
                 <div>
                   <h1 style={{ fontSize:'1.35rem', fontWeight:800, marginBottom:4 }}>{tr('researchers','title')}</h1>
@@ -455,6 +615,9 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
                         )}
                         <div style={{ display:'flex', gap:8 }}>
                           <button className="btn btn-ghost btn-sm" onClick={()=>openResModal(r)} style={{ flex:1 }}><Pencil size={13}/> {tr('researchers','editRes')}</button>
+                          <button className="btn btn-ghost btn-sm" onClick={()=>toggleResearcher(r.id, r.isActive)} title={r.isActive ? tr('researchers','active') : tr('researchers','inactive')}>
+                            {r.isActive ? <ToggleRight size={16} style={{ color:'var(--emerald)' }}/> : <ToggleLeft size={16} style={{ color:'var(--muted)' }}/>}
+                          </button>
                           <button className="btn btn-ghost btn-sm" onClick={()=>deleteRes(r.id)} style={{ color:'#ef4444' }}><Trash2 size={13}/></button>
                         </div>
                       </div>
@@ -567,6 +730,100 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
               )}
             </>
           )}
+
+          {/* ══ MESSAGES ══ */}
+          {tab==='messages' && (
+            <>
+              <div style={{ marginBottom: 22 }}>
+                <h1 style={{ fontSize:'1.35rem', fontWeight:800, marginBottom:4 }}>{tr('admin','tabMessages')}</h1>
+                <p style={{ color:'var(--muted)', fontSize:'.85rem' }}>{tr('admin','messagesSub')}</p>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'260px 1fr', gap:16, height:'calc(100vh - 230px)' }}>
+                {/* Contact list */}
+                <div style={{ background:'var(--white)', borderRadius:'var(--r-xl)', border:'1px solid var(--border)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                  <div style={{ display:'flex', gap:6, padding:12, borderBottom:'1px solid var(--border)' }}>
+                    {(['all','company','researcher'] as const).map(f => (
+                      <button key={f} onClick={()=>setContactFilter(f)}
+                        style={{ flex:1, padding:'5px 0', borderRadius:99, fontSize:'.72rem', fontWeight:600, cursor:'pointer', border:'none',
+                          background:contactFilter===f?'var(--emerald)':'var(--bg)', color:contactFilter===f?'#fff':'var(--muted)' }}>
+                        {f==='all' ? tr('common','all') : f==='company' ? tr('companies','title') : tr('researchers','title')}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ flex:1, overflowY:'auto' }}>
+                    {loadingContacts ? <div style={{ padding:30, textAlign:'center' }}><LoadingSpinner size="md"/></div> : filteredContacts.length===0 ? (
+                      <p style={{ padding:20, color:'var(--muted)', fontSize:'.82rem', textAlign:'center' }}>{tr('admin','noContacts')}</p>
+                    ) : filteredContacts.map(c => {
+                      const unread = allMsgs.filter(m=>m.sender_id===c.id && !m.is_read).length
+                      return (
+                        <button key={c.id} onClick={()=>setActiveContact(c)}
+                          style={{ display:'flex', alignItems:'center', gap:10, width:'100%', padding:'11px 14px', border:'none', borderBottom:'1px solid var(--border)', cursor:'pointer',
+                            background:activeContact?.id===c.id?'var(--emerald-lt)':'transparent', textAlign:'start' }}>
+                          <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:'.78rem',
+                            background:c.role==='researcher'?'linear-gradient(135deg,#7c3aed,#4c1d95)':'linear-gradient(135deg,var(--emerald),#059669)' }}>
+                            {c.name?.charAt(0)?.toUpperCase() ?? '?'}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ fontSize:'.82rem', fontWeight:700, color:'var(--navy)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{c.name}</p>
+                            <p style={{ fontSize:'.72rem', color:'var(--muted)' }}>{c.detail || (c.role==='researcher'?tr('researchers','title'):tr('companies','title'))}</p>
+                          </div>
+                          {unread>0 && <span style={{ background:'#ef4444', color:'#fff', borderRadius:99, fontSize:'.62rem', fontWeight:800, padding:'1px 6px' }}>{unread}</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Conversation */}
+                <div style={{ background:'var(--white)', borderRadius:'var(--r-xl)', border:'1px solid var(--border)', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                  {!activeContact ? (
+                    <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--muted)', fontSize:'.88rem' }}>
+                      {tr('admin','selectContact')}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10 }}>
+                        <div style={{ width:34, height:34, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700, fontSize:'.8rem',
+                          background:activeContact.role==='researcher'?'linear-gradient(135deg,#7c3aed,#4c1d95)':'linear-gradient(135deg,var(--emerald),#059669)' }}>
+                          {activeContact.name?.charAt(0)?.toUpperCase() ?? '?'}
+                        </div>
+                        <div>
+                          <p style={{ fontWeight:700, color:'var(--navy)', fontSize:'.9rem' }}>{activeContact.name}</p>
+                          <p style={{ fontSize:'.74rem', color:'var(--muted)' }}>{activeContact.email}</p>
+                        </div>
+                      </div>
+                      <div style={{ flex:1, overflowY:'auto', padding:'16px 18px', display:'flex', flexDirection:'column', gap:10 }}>
+                        {conversation.length===0 ? (
+                          <p style={{ textAlign:'center', color:'var(--muted)', fontSize:'.82rem', marginTop:30 }}>{tr('admin','noMessagesYet')}</p>
+                        ) : conversation.map(m => {
+                          const fromAdmin = m.sender_id === user.id
+                          return (
+                            <div key={m.id} style={{ display:'flex', justifyContent:fromAdmin?'flex-end':'flex-start' }}>
+                              <div style={{
+                                maxWidth:'70%', padding:'9px 13px', borderRadius:'var(--r-lg)', fontSize:'.84rem', lineHeight:1.5,
+                                background:fromAdmin?'var(--emerald)':'var(--bg)', color:fromAdmin?'#fff':'var(--text)',
+                              }}>
+                                {m.body}
+                                <div style={{ fontSize:'.66rem', marginTop:4, opacity:.7 }}>{new Date(m.created_at).toLocaleString(lang)}</div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div style={{ padding:14, borderTop:'1px solid var(--border)', display:'flex', gap:10 }}>
+                        <input className="form-input" placeholder={tr('admin','writeMessage')} value={msgBody}
+                          onChange={e=>setMsgBody(e.target.value)}
+                          onKeyDown={e=>{ if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendAdminMessage() } }}/>
+                        <button className="btn btn-primary" onClick={sendAdminMessage} disabled={sendingMsg || !msgBody.trim()} style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          {sendingMsg ? <LoadingSpinner size="sm"/> : <Send size={15}/>}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </main>
       </div>
 
@@ -668,7 +925,7 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
       </Modal>
 
       {/* Publish service */}
-      <Modal open={svcModal} onClose={()=>{setSvcModal(false);setSvcForm({category:'',title:'',description:''})}}
+      <Modal open={svcModal} onClose={()=>{setSvcModal(false);setSvcForm({category:'',title:'',description:'',department:'',price:'',isFree:false})}}
         title={tr('admin','publishService')}
         footer={<><button className="btn btn-ghost" onClick={()=>setSvcModal(false)}>{tr('common','cancel')}</button>
           <button form="svc-form" type="submit" className="btn btn-primary" disabled={submittingSvc}>{submittingSvc?<LoadingSpinner size="sm"/>:tr('admin','publish')}</button></>}>
@@ -679,6 +936,16 @@ export default function AdminPanel({ tr, lang, user, onLogout }: Props) {
             </select></div>
           <div className="form-group" style={{ marginBottom:14 }}><label className="form-label">{tr('admin','svcTitle')} *</label>
             <input className="form-input" required value={svcForm.title} onChange={e=>setSvcForm({...svcForm,title:e.target.value})} placeholder={tr('admin','svcTitlePh')}/></div>
+          <div className="form-group" style={{ marginBottom:14 }}><label className="form-label">{tr('catalog','department')}</label>
+            <input className="form-input" value={svcForm.department} onChange={e=>setSvcForm({...svcForm,department:e.target.value})} placeholder="ex: Informatique"/></div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14, alignItems:'end' }}>
+            <div className="form-group" style={{ marginBottom:0 }}><label className="form-label">{tr('catalog','pricing')} (DA)</label>
+              <input className="form-input" type="number" min={0} disabled={svcForm.isFree} value={svcForm.price} onChange={e=>setSvcForm({...svcForm,price:e.target.value})} placeholder={tr('catalog','onQuote')}/></div>
+            <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:'.84rem', color:'var(--text-2)', paddingBottom:11 }}>
+              <input type="checkbox" checked={svcForm.isFree} onChange={e=>setSvcForm({...svcForm,isFree:e.target.checked, price: e.target.checked ? '' : svcForm.price})}/>
+              {tr('catalog','free')}
+            </label>
+          </div>
           <div className="form-group"><label className="form-label">{tr('admin','svcDesc')} *</label>
             <textarea className="form-input" rows={4} required value={svcForm.description} onChange={e=>setSvcForm({...svcForm,description:e.target.value})} placeholder={tr('admin','svcDescPh')} style={{ resize:'vertical' }}/></div>
         </form>

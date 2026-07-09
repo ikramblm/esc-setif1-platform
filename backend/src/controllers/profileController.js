@@ -116,9 +116,76 @@ async function toggleCompanyActive(req, res) {
   } finally { client.release() }
 }
 
+async function getAllResearcherAccounts(req, res) {
+  const client = await pool.connect()
+  try {
+    const r = await client.query(
+      `SELECT id, name, specialty, department, grade, email, phone,
+              bio, is_active, created_at
+       FROM companies WHERE role = 'researcher' ORDER BY created_at DESC`
+    )
+    res.json({
+      researcherAccounts: r.rows.map(c => ({
+        id: c.id,
+        fullName: c.name,
+        specialty: c.specialty,
+        department: c.department,
+        grade: c.grade,
+        email: safeDecrypt(c.email),
+        phone: safeDecrypt(c.phone),
+        bio: c.bio,
+        isActive: c.is_active,
+        createdAt: c.created_at,
+      }))
+    })
+  } catch (err) {
+    console.error('getAllResearcherAccounts error:', err.message)
+    res.status(500).json({ message: 'Erreur serveur.' })
+  } finally { client.release() }
+}
+
+async function toggleResearcherAccountActive(req, res) {
+  const { id } = req.params
+  const client = await pool.connect()
+  try {
+    const r = await client.query(
+      `UPDATE companies SET is_active = NOT is_active, updated_at = NOW()
+       WHERE id = $1 AND role = 'researcher' RETURNING id, is_active`,
+      [id]
+    )
+    if (!r.rows.length) return res.status(404).json({ message: 'Chercheur introuvable.' })
+    res.json({ id: r.rows[0].id, isActive: r.rows[0].is_active })
+  } catch (err) {
+    console.error('toggleResearcherAccountActive error:', err.message)
+    res.status(500).json({ message: 'Erreur serveur.' })
+  } finally { client.release() }
+}
+
+async function getContacts(req, res) {
+  const client = await pool.connect()
+  try {
+    const r = await client.query(
+      `SELECT id, name, role, email, specialty, sector, department
+       FROM companies WHERE role IN ('company','researcher') ORDER BY name ASC`
+    )
+    res.json({
+      contacts: r.rows.map(c => ({
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        email: safeDecrypt(c.email),
+        detail: c.role === 'researcher' ? c.specialty : c.sector,
+      }))
+    })
+  } catch (err) {
+    console.error('getContacts error:', err.message)
+    res.status(500).json({ message: 'Erreur serveur.' })
+  } finally { client.release() }
+}
+
 function safeDecrypt(val) {
   if (!val) return ''
   try { return decrypt(val) } catch { return '' }
 }
 
-module.exports = { getProfile, updateProfile, getAllCompanies, toggleCompanyActive }
+module.exports = { getProfile, updateProfile, getAllCompanies, toggleCompanyActive, getContacts, getAllResearcherAccounts, toggleResearcherAccountActive }

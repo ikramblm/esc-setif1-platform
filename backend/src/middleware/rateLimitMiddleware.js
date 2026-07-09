@@ -28,4 +28,13 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 })
 
-module.exports = { loginLimiter, apiLimiter, registerLimiter }
+/** Email verification limiter: 10 per hour per IP (covers send + resend + verify attempts) */
+const verificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { message: 'Trop de tentatives de vérification. Réessayez plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+module.exports = { loginLimiter, apiLimiter, registerLimiter, verificationLimiter }

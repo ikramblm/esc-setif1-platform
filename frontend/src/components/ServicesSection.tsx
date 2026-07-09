@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom'
 import { Lightbulb, GraduationCap, BarChart3, FlaskConical, ArrowRight } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
 
 interface Props { tr: (s: string, k: string) => string }
 
@@ -11,8 +11,6 @@ const CARDS = [
 ]
 
 export default function ServicesSection({ tr }: Props) {
-  const navigate = useNavigate()
-
   return (
     <section id="services" style={{ background:'var(--white)' }} className="section">
       <div className="container">
@@ -46,10 +44,10 @@ export default function ServicesSection({ tr }: Props) {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => navigate('/auth?mode=register')}
-                style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:'.82rem', fontWeight:700, color:accent, background:'none', border:'none', cursor:'pointer', padding:0, marginTop:'auto' }}>
+              <Link to="/signup"
+                style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:'.82rem', fontWeight:700, color:accent, marginTop:'auto' }}>
                 {tr('services','cta')} <ArrowRight size={13}/>
-              </button>
+              </Link>
             </div>
           ))}
         </div>

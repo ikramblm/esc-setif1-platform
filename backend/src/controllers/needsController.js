@@ -2,16 +2,19 @@ const { v4: uuidv4 } = require('uuid')
 const pool = require('../db/connection')
 
 async function createNeed(req, res) {
-  const { title, serviceType, description, deadline, budget } = req.body
+  const { title, serviceType, description, deadline, budget, serviceId } = req.body
   const companyId = req.user.id
+  if (!title || !serviceType || !description) {
+    return res.status(400).json({ message: 'Titre, type de service et description sont requis.' })
+  }
   const client = await pool.connect()
   try {
     const id = uuidv4()
     const result = await client.query(
-      `INSERT INTO needs (id, company_id, service_type, title, description, deadline, budget, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'pending')
-       RETURNING id, title, service_type, description, deadline, budget, status, created_at`,
-      [id, companyId, serviceType, title, description, deadline, budget ?? null]
+      `INSERT INTO needs (id, company_id, service_type, title, description, deadline, budget, service_id, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'pending')
+       RETURNING id, title, service_type, description, deadline, budget, status, created_at, service_id`,
+      [id, companyId, serviceType, title, description, deadline || null, budget ?? null, serviceId || null]
     )
     res.status(201).json({ need: formatNeed(result.rows[0]) })
   } catch (err) {
@@ -25,8 +28,10 @@ async function getCompanyNeeds(req, res) {
   const client = await pool.connect()
   try {
     const result = await client.query(
-      `SELECT id, title, service_type, description, deadline, budget, status, created_at
-       FROM needs WHERE company_id = $1 ORDER BY created_at DESC`,
+      `SELECT n.id, n.title, n.service_type, n.description, n.deadline, n.budget, n.status, n.created_at,
+              n.service_id, s.title as service_title
+       FROM needs n LEFT JOIN services s ON n.service_id = s.id
+       WHERE n.company_id = $1 ORDER BY n.created_at DESC`,
       [companyId]
     )
     res.json({ needs: result.rows.map(formatNeed) })
@@ -59,6 +64,11 @@ async function getAllNeeds(req, res) {
   } finally { client.release() }
 }
 
+const STATUS_LABELS = {
+  pending: 'en attente', reviewing: 'en cours d’examen', approved: 'approuvée',
+  rejected: 'rejetée', completed: 'terminée',
+}
+
 async function updateNeedStatus(req, res) {
   const { id } = req.params
   const { status } = req.body
@@ -66,11 +76,17 @@ async function updateNeedStatus(req, res) {
   try {
     const result = await client.query(
       `UPDATE needs SET status = $1, updated_at = NOW()
-       WHERE id = $2 RETURNING id, status`,
+       WHERE id = $2 RETURNING id, status, title, company_id`,
       [status, id]
     )
     if (result.rows.length === 0) return res.status(404).json({ message: 'Demande introuvable.' })
-    res.json({ need: result.rows[0] })
+    const need = result.rows[0]
+    await client.query(
+      `INSERT INTO notifications (id, user_id, type, title, body)
+       VALUES ($1,$2,'status','Mise à jour de votre demande',$3)`,
+      [uuidv4(), need.company_id, `Votre demande "${need.title}" est maintenant ${STATUS_LABELS[status] ?? status}.`]
+    )
+    res.json({ need: { id: need.id, status: need.status } })
   } catch (err) {
     console.error('Update need status error:', err.message)
     res.status(500).json({ message: 'Erreur serveur.' })
@@ -87,6 +103,8 @@ function formatNeed(row) {
     budget: row.budget,
     status: row.status,
     createdAt: row.created_at,
+    serviceId: row.service_id ?? null,
+    serviceTitle: row.service_title ?? null,
   }
 }
 

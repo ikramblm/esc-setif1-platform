@@ -1,3 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- ═══════════════════════════════════════════════════════════════
 --  Seed Data – Demo admin + 4 default services
 --  Admin password: admin123 (bcrypt 12 rounds)
@@ -15,7 +32,7 @@ VALUES (
   'ENCRYPTED_PLACEHOLDER',                  -- Replace with: encrypt('admin@esc-setif1.dz')
   'admin@esc-setif1.dz',
   'ENCRYPTED_PLACEHOLDER',
-  '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uOeK',  -- admin123
+  '$2b$12$D6UTUONRS/SkbDPc9Eac4OIKYmxfGhRE5oLT6lGBcTLDzxrUajNrK',  -- admin123
   'admin'
 ) ON CONFLICT (email_normalized) DO NOTHING;
 

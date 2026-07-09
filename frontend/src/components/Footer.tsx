@@ -11,12 +11,7 @@ export default function Footer({ tr }: Props) {
           {/* Brand */}
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-              <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,var(--emerald),var(--emerald-dk))', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M3 14L9 4L15 14" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5.5 10.5H12.5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
-              </div>
+              <img src="/logo-64.png" alt="UFAS1" width={34} height={34} style={{ borderRadius:'50%' }}/>
               <div>
                 <div style={{ fontFamily:'var(--font-head)', fontWeight:800, fontSize:'.95rem', color:'#e2e8f0' }}>ESC Sétif 1</div>
                 <div style={{ fontSize:'.65rem', color:'#475569' }}>Services & Consultations</div>
@@ -29,10 +24,17 @@ export default function Footer({ tr }: Props) {
           <div>
             <h4 style={{ color:'#94a3b8', fontSize:'.72rem', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:16 }}>{tr('footer','links')}</h4>
             {['services','sectors','about','contact'].map(k => (
-              <a key={k} href={`/#${k}`} style={{ display:'block', marginBottom:10, fontSize:'.85rem', color:'#64748b', transition:'color var(--t)' }}
-                onMouseOver={e => (e.currentTarget.style.color='var(--emerald)') }
-                onMouseOut={e => (e.currentTarget.style.color='#64748b')}
-              >{tr('nav',k)}</a>
+              ['services','contact'].includes(k) ? (
+                <Link key={k} to={`/${k}`} style={{ display:'block', marginBottom:10, fontSize:'.85rem', color:'#64748b', transition:'color var(--t)' }}
+                  onMouseOver={e => (e.currentTarget.style.color='var(--emerald)') }
+                  onMouseOut={e => (e.currentTarget.style.color='#64748b')}
+                >{tr('nav',k)}</Link>
+              ) : (
+                <a key={k} href={`/#${k}`} style={{ display:'block', marginBottom:10, fontSize:'.85rem', color:'#64748b', transition:'color var(--t)' }}
+                  onMouseOver={e => (e.currentTarget.style.color='var(--emerald)') }
+                  onMouseOut={e => (e.currentTarget.style.color='#64748b')}
+                >{tr('nav',k)}</a>
+              )
             ))}
           </div>
 
@@ -40,10 +42,10 @@ export default function Footer({ tr }: Props) {
           <div>
             <h4 style={{ color:'#94a3b8', fontSize:'.72rem', fontWeight:700, letterSpacing:'.08em', textTransform:'uppercase', marginBottom:16 }}>{tr('nav','services')}</h4>
             {['c','t','s','r'].map(p => (
-              <a key={p} href="#services" style={{ display:'block', marginBottom:10, fontSize:'.85rem', color:'#64748b', transition:'color var(--t)' }}
+              <Link key={p} to="/services" style={{ display:'block', marginBottom:10, fontSize:'.85rem', color:'#64748b', transition:'color var(--t)' }}
                 onMouseOver={e => (e.currentTarget.style.color='var(--emerald)')}
                 onMouseOut={e => (e.currentTarget.style.color='#64748b')}
-              >{tr('services',`${p}_title`)}</a>
+              >{tr('services',`${p}_title`)}</Link>
             ))}
           </div>
 

@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useI18n } from './hooks/useI18n'
 import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import AuthModal from './components/AuthModal'
-import AccountDrawer from './components/AccountDrawer'
 import PublicHome from './pages/PublicHome'
+import AuthPage from './pages/AuthPage'
+import ServicesPage from './pages/ServicesPage'
+import ContactPage from './pages/ContactPage'
+import AccountPage from './pages/AccountPage'
 import AdminPanel from './pages/AdminPanel'
 import ResearcherDashboard from './pages/ResearcherDashboard'
 import { notificationsApi } from './lib/api'
+import type { AuthUser } from './lib/auth'
 
-type AuthMode = 'login' | 'register'
-
-function RequireAuth({ children, roles }: { children: React.ReactNode; roles?: string[] }) {
-  const { user } = useAuth()
-  if (!user) return <Navigate to="/" replace />
+function RequireAuth({ user, children, roles }: { user: AuthUser | null; children: React.ReactNode; roles?: string[] }) {
+  if (!user) return <Navigate to="/login" replace />
   if (roles && !roles.includes(user.role)) {
     if (user.role === 'admin') return <Navigate to="/admin" replace />
     if (user.role === 'researcher') return <Navigate to="/researcher" replace />
@@ -28,17 +28,7 @@ function AppLayout() {
   const { lang, setLang, tr } = useI18n()
   const { user, login, register, registerResearcher, logout, loading, error } = useAuth()
 
-  const [authOpen, setAuthOpen]         = useState(false)
-  const [authMode, setAuthMode]         = useState<AuthMode>('login')
-  const [drawerOpen, setDrawerOpen]     = useState(false)
-  const [unreadCount, setUnreadCount]   = useState(0)
-
-  const openAuth = (mode: AuthMode = 'login') => { setAuthMode(mode); setAuthOpen(true) }
-  const openAccount = () => {
-    if (!user) return openAuth()
-    if (user.role === 'admin') { window.location.href = '/admin'; return }
-    setDrawerOpen(true)
-  }
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // Poll unread notification count for logged-in non-admin users
   useEffect(() => {
@@ -55,39 +45,26 @@ function AppLayout() {
     return () => { mounted = false; clearInterval(id) }
   }, [user])
 
-  const handleLogout = () => {
-    setDrawerOpen(false)
-    logout()
+  const PublicWrapper = ({ children }: { children: React.ReactNode }) => {
+    const navigate = useNavigate()
+    const openAccount = () => {
+      if (!user) { navigate('/login'); return }
+      if (user.role === 'admin') { window.location.href = '/admin'; return }
+      navigate('/account')
+    }
+    return (
+      <>
+        <Navbar
+          lang={lang} setLang={setLang} tr={tr}
+          user={user} onLogout={logout}
+          onOpenAccount={openAccount}
+          unreadCount={unreadCount}
+        />
+        {children}
+        <Footer tr={tr} lang={lang} />
+      </>
+    )
   }
-
-  const PublicWrapper = ({ children }: { children: React.ReactNode }) => (
-    <>
-      <Navbar
-        lang={lang} setLang={setLang} tr={tr}
-        user={user} onLogout={handleLogout}
-        onOpenAuth={openAuth} onOpenAccount={openAccount}
-        unreadCount={unreadCount}
-      />
-      {children}
-      <Footer tr={tr} lang={lang} />
-      <AuthModal
-        open={authOpen && !user}
-        onClose={() => setAuthOpen(false)}
-        tr={tr}
-        onLogin={async (p) => { const u = await login(p); setAuthOpen(false); return u }}
-        onRegister={async (p) => { const u = await register(p); setAuthOpen(false); return u }}
-        onRegisterResearcher={async (p) => { const u = await registerResearcher(p); setAuthOpen(false); return u }}
-        loading={loading} error={error}
-        initialMode={authMode}
-      />
-      <AccountDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        user={user} onLogout={handleLogout}
-        tr={tr} lang={lang}
-      />
-    </>
-  )
 
   return (
     <BrowserRouter>
@@ -96,6 +73,34 @@ function AppLayout() {
           <PublicWrapper>
             <PublicHome tr={tr} lang={lang} />
           </PublicWrapper>
+        } />
+
+        <Route path="/services" element={
+          <PublicWrapper>
+            <ServicesPage tr={tr} lang={lang} isAuthenticated={!!user} />
+          </PublicWrapper>
+        } />
+
+        <Route path="/contact" element={
+          <PublicWrapper>
+            <ContactPage tr={tr} />
+          </PublicWrapper>
+        } />
+
+        {/* Standalone login / signup pages */}
+        <Route path="/login" element={
+          user ? <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace /> : (
+            <PublicWrapper>
+              <AuthPage tr={tr} initialMode="login" onLogin={login} onRegister={register} onRegisterResearcher={registerResearcher} loading={loading} error={error} />
+            </PublicWrapper>
+          )
+        } />
+        <Route path="/signup" element={
+          user ? <Navigate to={user.role === 'admin' ? '/admin' : '/'} replace /> : (
+            <PublicWrapper>
+              <AuthPage tr={tr} initialMode="signup" onLogin={login} onRegister={register} onRegisterResearcher={registerResearcher} loading={loading} error={error} />
+            </PublicWrapper>
+          )
         } />
 
         <Route path="/privacy" element={
@@ -111,24 +116,30 @@ function AppLayout() {
           </PublicWrapper>
         } />
 
+        {/* Account page — sidebar dashboard for company / researcher */}
+        <Route path="/account" element={
+          <RequireAuth user={user} roles={['company', 'researcher']}>
+            <AccountPage tr={tr} lang={lang} user={user!} onLogout={logout} />
+          </RequireAuth>
+        } />
+
         {/* Researcher portal (stays as full page — complex workflow) */}
         <Route path="/researcher" element={
-          <RequireAuth roles={['researcher']}>
+          <RequireAuth user={user} roles={['researcher']}>
             <ResearcherDashboard tr={tr} lang={lang} user={user!} onLogout={logout} />
           </RequireAuth>
         } />
 
         {/* Admin panel */}
         <Route path="/admin" element={
-          <RequireAuth roles={['admin']}>
+          <RequireAuth user={user} roles={['admin']}>
             <AdminPanel tr={tr} lang={lang} user={user!} onLogout={logout} />
           </RequireAuth>
         } />
 
-        {/* Legacy /auth → home (auth is now a modal) */}
-        <Route path="/auth" element={<Navigate to="/" replace />} />
-        {/* Legacy /dashboard → home (company uses drawer overlay) */}
-        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+        {/* Legacy aliases */}
+        <Route path="/auth" element={<Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/account" replace />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
