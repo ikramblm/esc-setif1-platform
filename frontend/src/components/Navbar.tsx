@@ -240,7 +240,7 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAccoun
           .hamburger-btn { display: flex !important; }
         }
         /* Prevent navbar from creating horizontal overflow */
-        header { max-width: 100vw; overflow: hidden; }
+        header { max-width: 100vw; overflow-x: hidden; }
         header .container { gap: 12px !important; }
         @media (max-width: 480px) {
           header .container { gap: 8px !important; padding: 0 12px !important; }
