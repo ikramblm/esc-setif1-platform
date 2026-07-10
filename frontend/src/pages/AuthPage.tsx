@@ -318,9 +318,6 @@ export default function AuthPage({ tr, initialMode, onLogin, onRegister, onRegis
                   {tr('auth', 'noAccount')}{' '}
                   <Link to="/signup" style={{ color: 'var(--emerald)', fontWeight: 700 }}>{tr('auth', 'registerTitle')}</Link>
                 </p>
-                <div style={{ marginTop: 16, padding: '10px 14px', background: 'var(--bg)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)', fontSize: '.76rem', color: 'var(--muted)', textAlign: 'center' }}>
-                  <strong style={{ color: 'var(--navy)' }}>{tr('auth', 'demoHint')}</strong> admin@esc-setif1.dz / admin123
-                </div>
               </form>
             )}
 
