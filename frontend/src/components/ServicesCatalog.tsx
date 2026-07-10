@@ -129,7 +129,7 @@ export default function ServicesCatalog({ tr, lang, isAuthenticated, onRequestSe
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: filtersOpen ? '240px 1fr' : '1fr', gap: 28, alignItems: 'flex-start' }}>
+        <div className={filtersOpen ? 'catalog-layout-split' : ''} style={{ display: 'grid', gridTemplateColumns: filtersOpen ? '240px 1fr' : '1fr', gap: 28, alignItems: 'flex-start' }}>
           {/* Filter sidebar */}
           {filtersOpen && (
             <aside style={{
@@ -190,6 +190,13 @@ export default function ServicesCatalog({ tr, lang, isAuthenticated, onRequestSe
           </div>
         </div>
       </div>
+      <style>{`
+        @media(max-width:640px){
+          .catalog-layout-split{ grid-template-columns:1fr !important; }
+          .catalog-expanded-card{ flex-direction:column !important; }
+          .catalog-expanded-left{ flex:unset !important; min-width:unset !important; }
+        }
+      `}</style>
     </section>
   )
 }
@@ -213,7 +220,7 @@ function CatalogCard({ service, lang, tr, isFavorite, isExpanded, onToggleExpand
 
   if (isExpanded) {
     return (
-      <div key="expanded" className="card card-expand" style={{
+      <div key="expanded" className="card card-expand catalog-expanded-card" style={{
         gridColumn: '1 / -1', padding: 26, display: 'flex', gap: 28,
         flexWrap: 'wrap', position: 'relative', transformOrigin: 'top center',
       }}>
@@ -223,7 +230,7 @@ function CatalogCard({ service, lang, tr, isFavorite, isExpanded, onToggleExpand
         </button>
 
         {/* Left: title/meta/actions */}
-        <div style={{ flex: '0 0 240px', minWidth: 200 }}>
+        <div className="catalog-expanded-left" style={{ flex: '0 0 240px', minWidth: 200 }}>
           <span className="badge" style={{ background: `${color}18`, color, fontWeight: 700, marginBottom: 12, display: 'inline-block' }}>{service.category}</span>
           <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--navy)', marginBottom: 10, paddingRight: 20 }}>{localizedTitle(service, lang)}</h3>
           <p style={{ fontSize: '.95rem', fontWeight: 800, color: service.isFree ? 'var(--emerald)' : 'var(--navy)', marginBottom: 10 }}>

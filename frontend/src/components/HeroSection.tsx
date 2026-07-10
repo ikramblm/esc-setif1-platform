@@ -20,7 +20,7 @@ export default function HeroSection({ tr }: HeroProps) {
         backgroundSize:'56px 56px',
       }}/>
 
-      <div className="container" style={{ position:'relative', zIndex:1, padding:'88px 24px' }}>
+      <div className="container hero-container" style={{ position:'relative', zIndex:1, padding:'88px 24px' }}>
         {/* Badge */}
         <div style={{
           display:'inline-flex', alignItems:'center', gap:8,
@@ -51,7 +51,7 @@ export default function HeroSection({ tr }: HeroProps) {
         </p>
 
         {/* CTAs */}
-        <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:72 }}>
+        <div className="hero-ctas" style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:48 }}>
           <Link to="/signup" className="btn btn-primary btn-xl" style={{ gap:10 }}>
             {tr('hero','cta1')} <ArrowRight size={18}/>
           </Link>
@@ -81,6 +81,12 @@ export default function HeroSection({ tr }: HeroProps) {
       <style>{`
         @media (max-width: 768px) {
           .trust-card { display: none !important; }
+          .hero-container { padding: 64px 16px !important; }
+        }
+        @media (max-width: 480px) {
+          .hero-container { padding: 48px 14px !important; }
+          .hero-ctas { flex-direction: column !important; }
+          .hero-ctas a { width: 100% !important; justify-content: center !important; }
         }
       `}</style>
     </section>

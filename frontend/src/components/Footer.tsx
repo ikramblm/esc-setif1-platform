@@ -69,7 +69,7 @@ export default function Footer({ tr }: Props) {
           </div>
         </div>
 
-        <div style={{ borderTop:'1px solid rgba(255,255,255,.06)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
+        <div className="footer-bottom" style={{ borderTop:'1px solid rgba(255,255,255,.06)', paddingTop:24, display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
           <p style={{ fontSize:'.78rem' }}>{tr('footer','rights')}</p>
           <div style={{ display:'flex', gap:20 }}>
             <Link to="/privacy" style={{ fontSize:'.78rem', color:'#64748b', transition:'color var(--t)' }}>{tr('footer','privacy')}</Link>
@@ -77,7 +77,17 @@ export default function Footer({ tr }: Props) {
           </div>
         </div>
       </div>
-      <style>{`@media(max-width:900px){ .footer-grid{ grid-template-columns:1fr 1fr !important; } } @media(max-width:560px){ .footer-grid{ grid-template-columns:1fr !important; } }`}</style>
+      <style>{`
+        @media(max-width:900px){
+          .footer-grid{ grid-template-columns:1fr 1fr !important; gap:32px !important; }
+        }
+        @media(max-width:560px){
+          .footer-grid{ grid-template-columns:1fr !important; gap:28px !important; }
+        }
+        @media(max-width:480px){
+          .footer-bottom{ flex-direction:column !important; align-items:flex-start !important; gap:8px !important; }
+        }
+      `}</style>
     </footer>
   )
 }

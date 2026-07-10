@@ -55,7 +55,11 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; font-size: 16px; }
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  overflow-x: hidden;   /* prevent any child bleed from creating page-wide scrollbar */
+}
 
 body {
   font-family: var(--font-body);
@@ -63,6 +67,8 @@ body {
   background: var(--bg);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -414,6 +420,13 @@ select.form-input {
    RESPONSIVE
 ══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .container { padding: 0 16px; }
+  .container { padding: 0 16px; width: 100%; }
   .section   { padding: 64px 0; }
+}
+
+/* Ensure nothing ever bleeds past the viewport */
+@media (max-width: 480px) {
+  .container { padding: 0 14px; }
+  .section   { padding: 48px 0; }
+  .btn-xl    { padding: 13px 24px; font-size: .95rem; }
 }

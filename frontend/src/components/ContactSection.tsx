@@ -65,7 +65,7 @@ export default function ContactSection({ tr }: Props) {
               background:'rgba(255,255,255,.055)', backdropFilter:'blur(12px)',
               border:'1px solid rgba(255,255,255,.1)', borderRadius:'var(--r-2xl)', padding:36,
             }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
+              <div className="contact-form-row" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:16 }}>
                 {[
                   { key:'name', type:'text',  label:tr('contact','name') },
                   { key:'email',type:'email', label:tr('contact','email') },
@@ -97,7 +97,12 @@ export default function ContactSection({ tr }: Props) {
           )}
         </div>
       </div>
-      <style>{`@media(max-width:768px){ .contact-grid{ grid-template-columns:1fr !important; gap:32px !important; } }`}</style>
+      <style>{`
+        @media(max-width:768px){
+          .contact-grid{ grid-template-columns:1fr !important; gap:32px !important; }
+          .contact-form-row{ grid-template-columns:1fr !important; }
+        }
+      `}</style>
     </section>
   )
 }

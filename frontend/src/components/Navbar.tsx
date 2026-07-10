@@ -239,6 +239,13 @@ export default function Navbar({ lang, setLang, tr, user, onLogout, onOpenAccoun
           .desktop-nav { display: none !important; }
           .hamburger-btn { display: flex !important; }
         }
+        /* Prevent navbar from creating horizontal overflow */
+        header { max-width: 100vw; overflow: hidden; }
+        header .container { gap: 12px !important; }
+        @media (max-width: 480px) {
+          header .container { gap: 8px !important; padding: 0 12px !important; }
+          .nav-account-btn span { display: none !important; }
+        }
       `}</style>
     </>
   )

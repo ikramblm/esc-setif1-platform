@@ -173,8 +173,8 @@ export default function AuthPage({ tr, initialMode, onLogin, onRegister, onRegis
 
   return (
     <main style={{ minHeight: '88vh', position: 'relative', overflow: 'hidden', background: 'var(--bg)' }}>
-      <div style={{ display: 'flex', minHeight: '88vh', position: 'relative' }}>
-        {/* Brand panel — slides between left/right */}
+      <div style={{ display: 'flex', minHeight: '88vh', position: 'relative' }} className="auth-layout">
+        {/* Brand panel — slides between left/right, hidden on mobile */}
         <div style={{
           position: 'absolute', top: 0, bottom: 0, width: '50%',
           left: isLoginSide ? 0 : '50%',
@@ -212,7 +212,7 @@ export default function AuthPage({ tr, initialMode, onLogin, onRegister, onRegis
           transition: 'left .5s cubic-bezier(.4,0,.2,1)',
           background: 'var(--white)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '48px 24px', overflowY: 'auto',
+          padding: '48px 24px', overflowY: 'auto', overflowX: 'hidden',
         }} className="auth-form-panel">
           <div style={{ width: '100%', maxWidth: 400 }}>
             {/* Header */}
@@ -552,7 +552,20 @@ export default function AuthPage({ tr, initialMode, onLogin, onRegister, onRegis
       <style>{`
         @media (max-width: 860px) {
           .auth-brand-panel { display: none !important; }
-          .auth-form-panel { position: relative !important; left: 0 !important; width: 100% !important; }
+          .auth-layout { min-height: unset !important; }
+          .auth-form-panel {
+            position: relative !important;
+            left: 0 !important;
+            width: 100% !important;
+            min-height: 88vh;
+            padding: 40px 20px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .auth-form-panel {
+            padding: 32px 16px !important;
+            align-items: flex-start !important;
+          }
         }
       `}</style>
     </main>
